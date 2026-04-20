@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { apiFetch } from '../api';
 
 export type MetricPoint = {
   time: number; // offset from start in ms
@@ -67,8 +68,7 @@ export function useLLMStream() {
     let finalDecodeRate = 0;
 
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const response = await fetch(`${API_BASE}/api/chat`, {
+      const response = await apiFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider, model, prompt, api_key: apiKey }),
@@ -105,7 +105,7 @@ export function useLLMStream() {
               if (event.type === 'error' || event.type === 'done') {
                 const finalTotalTime = performance.now() - startTime;
                 try {
-                  await fetch('http://localhost:8080/api/history', {
+                  await apiFetch('/api/history', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

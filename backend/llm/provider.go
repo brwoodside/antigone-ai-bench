@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
 // MapModel converts a frontend/mock model name to the real API model name
@@ -29,57 +30,108 @@ func MapModel(model string) string {
 	return model
 }
 
+// StreamClient is used for provider SSE streams. It times out only on waiting for
+// response headers; once the stream is established, individual chunks can take as
+// long as the model needs.
+var StreamClient = &http.Client{
+	Transport: &http.Transport{
+		ResponseHeaderTimeout: 60 * time.Second,
+		IdleConnTimeout:       90 * time.Second,
+	},
+}
+
+// HTTPClient is used for non-streaming provider calls (model listings etc.).
+var HTTPClient = &http.Client{Timeout: 30 * time.Second}
+
 type ModelInfo struct {
 	ID string `json:"id"`
 }
 
-func FetchModels(provider, apiKey string) ([]ModelInfo, error) {
+func FetchModels(ctx context.Context, provider, apiKey string) ([]ModelInfo, error) {
 	var models []ModelInfo
-	client := &http.Client{}
 
 	switch provider {
 	case "openai":
-		req, _ := http.NewRequest("GET", "https://api.openai.com/v1/models", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", "https://api.openai.com/v1/models", nil)
+		if err != nil {
+			return nil, err
+		}
 		req.Header.Set("Authorization", "Bearer "+apiKey)
-		resp, err := client.Do(req)
-		if err != nil { return nil, err }
+		resp, err := HTTPClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode != 200 { return nil, fmt.Errorf("openai error: %d", resp.StatusCode) }
+		if resp.StatusCode != 200 {
+			return nil, fmt.Errorf("openai error: %d", resp.StatusCode)
+		}
 
-		var data struct { Data []struct { ID string `json:"id"` } `json:"data"` }
-		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil { return nil, err }
+		var data struct {
+			Data []struct {
+				ID string `json:"id"`
+			} `json:"data"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+			return nil, err
+		}
 		for _, m := range data.Data {
 			if strings.HasPrefix(m.ID, "gpt-") || strings.HasPrefix(m.ID, "o1-") {
 				models = append(models, ModelInfo{ID: m.ID})
 			}
 		}
 	case "anthropic":
-		req, _ := http.NewRequest("GET", "https://api.anthropic.com/v1/models", nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", "https://api.anthropic.com/v1/models", nil)
+		if err != nil {
+			return nil, err
+		}
 		req.Header.Set("x-api-key", apiKey)
 		req.Header.Set("anthropic-version", "2023-06-01")
-		resp, err := client.Do(req)
-		if err != nil { return nil, err }
+		resp, err := HTTPClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode != 200 { return nil, fmt.Errorf("anthropic error: %d", resp.StatusCode) }
+		if resp.StatusCode != 200 {
+			return nil, fmt.Errorf("anthropic error: %d", resp.StatusCode)
+		}
 
-		var data struct { Data []struct { ID string `json:"id"` } `json:"data"` }
-		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil { return nil, err }
+		var data struct {
+			Data []struct {
+				ID string `json:"id"`
+			} `json:"data"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+			return nil, err
+		}
 		for _, m := range data.Data {
 			models = append(models, ModelInfo{ID: m.ID})
 		}
 	case "gemini":
-		url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models?key=%s", apiKey)
-		req, _ := http.NewRequest("GET", url, nil)
-		resp, err := client.Do(req)
-		if err != nil { return nil, err }
+		req, err := http.NewRequestWithContext(ctx, "GET", "https://generativelanguage.googleapis.com/v1beta/models", nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("x-goog-api-key", apiKey)
+		resp, err := HTTPClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode != 200 { return nil, fmt.Errorf("gemini error: %d", resp.StatusCode) }
+		if resp.StatusCode != 200 {
+			return nil, fmt.Errorf("gemini error: %d", resp.StatusCode)
+		}
 
-		var data struct { Models []struct { Name string `json:"name"` } `json:"models"` }
-		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil { return nil, err }
+		var data struct {
+			Models []struct {
+				Name string `json:"name"`
+			} `json:"models"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+			return nil, err
+		}
 		for _, m := range data.Models {
 			id := strings.TrimPrefix(m.Name, "models/")
 			models = append(models, ModelInfo{ID: id})

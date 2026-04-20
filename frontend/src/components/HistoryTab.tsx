@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Table, Select, Group, Text, Badge, Paper, Stack, Button } from '@mantine/core';
 import { IconChevronUp, IconChevronDown, IconSelector } from '@tabler/icons-react';
+import { apiFetch } from '../api';
 
 export interface RunRecord {
   id: number;
@@ -49,7 +50,7 @@ export function HistoryTab() {
 
   const fetchHistory = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/history');
+      const res = await apiFetch('/api/history');
       if (res.ok) {
         const data = await res.json();
         setRuns(data || []);
@@ -62,8 +63,7 @@ export function HistoryTab() {
   const clearHistory = async () => {
     if (window.confirm('Are you sure you want to clear all history?')) {
       try {
-        const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-        await fetch(`${API_BASE}/api/history`, { method: 'DELETE' });
+        await apiFetch('/api/history', { method: 'DELETE' });
         setRuns([]);
       } catch (e) {
         console.error('Failed to clear history', e);

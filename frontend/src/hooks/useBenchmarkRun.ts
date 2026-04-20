@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { apiFetch } from '../api';
 
 export interface BenchmarkRunEvent {
   type: 'progress' | 'done' | 'error';
@@ -7,11 +8,12 @@ export interface BenchmarkRunEvent {
   correct?: number;
   accuracy?: number;
   error?: string;
+  simulated?: boolean;
 }
 
 export function useBenchmarkRun() {
   const [isRunning, setIsRunning] = useState(false);
-  const [progress, setProgress] = useState({ processed: 0, total: 0, correct: 0, accuracy: 0 });
+  const [progress, setProgress] = useState({ processed: 0, total: 0, correct: 0, accuracy: 0, simulated: false });
   const [error, setError] = useState<string | null>(null);
   
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -32,13 +34,12 @@ export function useBenchmarkRun() {
     
     setIsRunning(true);
     setError(null);
-    setProgress({ processed: 0, total: 0, correct: 0, accuracy: 0 });
+    setProgress({ processed: 0, total: 0, correct: 0, accuracy: 0, simulated: false });
 
     const startTime = performance.now();
 
     try {
-      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const response = await fetch(`${API_BASE}/api/run-benchmark`, {
+      const response = await apiFetch('/api/run-benchmark', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -78,33 +79,37 @@ export function useBenchmarkRun() {
               const event = JSON.parse(dataStr) as BenchmarkRunEvent;
               if (event.type === 'error' || event.type === 'done') {
                 const finalAccuracy = event.accuracy || 0;
-                
+                const simulated = !!event.simulated;
+
                 if (event.type === 'done') {
                   setProgress({
                     processed: event.processed || 0,
                     total: event.total || 0,
                     correct: event.correct || 0,
                     accuracy: finalAccuracy,
+                    simulated,
                   });
                 }
 
-                try {
-                  await fetch('http://localhost:8080/api/history', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      run_type: 'evaluation',
-                      model,
-                      provider,
-                      ttft_ms: 0,
-                      prompt_rate: 0,
-                      decode_rate: 0,
-                      total_time_ms: performance.now() - startTime,
-                      accuracy: finalAccuracy
-                    })
-                  });
-                } catch (e) {
-                  console.error('Failed to save benchmark history:', e);
+                if (event.type === 'done') {
+                  try {
+                    await apiFetch('/api/history', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        run_type: simulated ? 'simulated' : 'evaluation',
+                        model,
+                        provider,
+                        ttft_ms: 0,
+                        prompt_rate: 0,
+                        decode_rate: 0,
+                        total_time_ms: performance.now() - startTime,
+                        accuracy: simulated ? 0 : finalAccuracy,
+                      })
+                    });
+                  } catch (e) {
+                    console.error('Failed to save benchmark history:', e);
+                  }
                 }
 
                 if (event.type === 'error') {
@@ -118,6 +123,7 @@ export function useBenchmarkRun() {
                   total: event.total || 0,
                   correct: event.correct || 0,
                   accuracy: event.accuracy || 0,
+                  simulated: !!event.simulated,
                 });
               }
             } catch (e) {

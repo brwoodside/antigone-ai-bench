@@ -14,7 +14,7 @@ import (
 type GeminiProvider struct{}
 
 func (p *GeminiProvider) Stream(ctx context.Context, req StreamRequest, eventChan chan<- StreamEvent) error {
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:streamGenerateContent?alt=sse&key=%s", MapModel(req.Model), req.APIKey)
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:streamGenerateContent?alt=sse", MapModel(req.Model))
 
 	body := map[string]interface{}{
 		"contents": []map[string]interface{}{
@@ -33,9 +33,9 @@ func (p *GeminiProvider) Stream(ctx context.Context, req StreamRequest, eventCha
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("x-goog-api-key", req.APIKey)
 
-	client := &http.Client{}
-	resp, err := client.Do(httpReq)
+	resp, err := StreamClient.Do(httpReq)
 	if err != nil {
 		return err
 	}

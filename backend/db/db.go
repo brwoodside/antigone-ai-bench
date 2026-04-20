@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"log"
+	"os"
 
 	_ "github.com/glebarez/go-sqlite"
 )
@@ -10,11 +11,17 @@ import (
 var DB *sql.DB
 
 func InitDB() {
+	path := os.Getenv("DB_PATH")
+	if path == "" {
+		path = "./history.db"
+	}
+
 	var err error
-	DB, err = sql.Open("sqlite", "./antigone-llm-bench.db")
+	DB, err = sql.Open("sqlite", path)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("Opened SQLite database at %s", path)
 
 	createTableQuery := `
 	CREATE TABLE IF NOT EXISTS runs (

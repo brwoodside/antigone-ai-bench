@@ -1,25 +1,28 @@
-version: '3.8'
 services:
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     volumes:
       - ./data:/app/data
     environment:
       - DB_PATH=/app/data/history.db
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173}
     ports:
       - "8080:8080"
+    restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # This tells the frontend to route API calls to the same domain it's hosted on
-        - VITE_API_URL=https://bench.brw.ai
+        # Leave empty for same-origin deployments behind Caddy.
+        # Set to e.g. http://localhost:8080 when running without a reverse proxy.
+        - VITE_API_URL=${VITE_API_URL-}
     ports:
       - "5173:80"
+    restart: unless-stopped
 
   caddy:
     image: caddy:2
@@ -38,4 +41,3 @@ services:
 volumes:
   caddy_data:
   caddy_config:
-

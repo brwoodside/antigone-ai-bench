@@ -31,6 +31,17 @@ type BenchmarkEvent struct {
 	Correct   int     `json:"correct,omitempty"`
 	Accuracy  float64 `json:"accuracy,omitempty"`
 	Error     string  `json:"error,omitempty"`
+	Simulated bool    `json:"simulated,omitempty"`
+}
+
+// isSimulatedDataset reports whether this dataset cannot be scored with
+// exact-match accuracy and should be treated as a demo / mock run.
+func isSimulatedDataset(dataset string) bool {
+	switch dataset {
+	case "princeton-nlp/SWE-bench_Lite", "web_arena", "THUDM/AgentBench":
+		return true
+	}
+	return false
 }
 
 type Row struct {
@@ -230,6 +241,7 @@ func RunEvaluation(ctx context.Context, req BenchmarkRequest, eventChan chan<- B
 	var processed int32
 	var correct int32
 	total := len(rows)
+	simulated := isSimulatedDataset(req.Dataset)
 
 	concurrency := req.Concurrency
 	if concurrency <= 0 {
@@ -282,15 +294,12 @@ func RunEvaluation(ctx context.Context, req BenchmarkRequest, eventChan chan<- B
 
 			response, err := llm.Complete(reqCtx, provider, llmReq)
 
-			if err == nil {
+			if err == nil && !simulated {
 				predicted := parseAnswer(response, req.Dataset)
 				if req.Dataset == "gsm8k" {
 					if predicted == expectedAnswer {
 						atomic.AddInt32(&correct, 1)
 					}
-				} else if req.Dataset == "princeton-nlp/SWE-bench_Lite" || req.Dataset == "web_arena" || req.Dataset == "THUDM/AgentBench" {
-					// We simulate correctness for these non-standard datasets
-					atomic.AddInt32(&correct, 1)
 				} else {
 					if len(predicted) > 0 && len(expectedAnswer) > 0 {
 						if predicted[0] == expectedAnswer[0] {
@@ -298,31 +307,39 @@ func RunEvaluation(ctx context.Context, req BenchmarkRequest, eventChan chan<- B
 						}
 					}
 				}
-			} else {
-				// If error occurs, we still count it as processed (but incorrect)
 			}
 
 			p := atomic.AddInt32(&processed, 1)
 			c := atomic.LoadInt32(&correct)
 
-			eventChan <- BenchmarkEvent{
+			ev := BenchmarkEvent{
 				Type:      "progress",
 				Processed: int(p),
 				Total:     total,
-				Correct:   int(c),
-				Accuracy:  float64(c) / float64(p),
+				Simulated: simulated,
 			}
+			if !simulated {
+				ev.Correct = int(c)
+				ev.Accuracy = float64(c) / float64(p)
+			}
+			eventChan <- ev
 		}(i, row)
 	}
 
 	wg.Wait()
 
-	c := atomic.LoadInt32(&correct)
-	eventChan <- BenchmarkEvent{
+	done := BenchmarkEvent{
 		Type:      "done",
 		Processed: total,
 		Total:     total,
-		Correct:   int(c),
-		Accuracy:  float64(c) / float64(total),
+		Simulated: simulated,
 	}
+	if !simulated {
+		c := atomic.LoadInt32(&correct)
+		done.Correct = int(c)
+		if total > 0 {
+			done.Accuracy = float64(c) / float64(total)
+		}
+	}
+	eventChan <- done
 }
