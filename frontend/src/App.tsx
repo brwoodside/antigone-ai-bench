@@ -44,7 +44,8 @@ function App() {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:8080/api/models?provider=${provider}&api_key=${encodeURIComponent(key)}`);
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const res = await fetch(`${API_BASE}/api/models?provider=${provider}&api_key=${encodeURIComponent(key)}`);
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       const newModels = data.map((m: any) => ({

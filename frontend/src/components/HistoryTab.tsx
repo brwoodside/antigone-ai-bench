@@ -62,7 +62,8 @@ export function HistoryTab() {
   const clearHistory = async () => {
     if (window.confirm('Are you sure you want to clear all history?')) {
       try {
-        await fetch('http://localhost:8080/api/history', { method: 'DELETE' });
+        const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+        await fetch(`${API_BASE}/api/history`, { method: 'DELETE' });
         setRuns([]);
       } catch (e) {
         console.error('Failed to clear history', e);

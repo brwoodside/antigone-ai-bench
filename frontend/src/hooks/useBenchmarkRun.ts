@@ -37,7 +37,8 @@ export function useBenchmarkRun() {
     const startTime = performance.now();
 
     try {
-      const response = await fetch('http://localhost:8080/api/run-benchmark', {
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${API_BASE}/api/run-benchmark`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

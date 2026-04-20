@@ -67,7 +67,8 @@ export function useLLMStream() {
     let finalDecodeRate = 0;
 
     try {
-      const response = await fetch('http://localhost:8080/api/chat', {
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider, model, prompt, api_key: apiKey }),

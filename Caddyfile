@@ -1,0 +1,10 @@
+bench.brw.ai {
+    # Route all /api requests to the Go backend
+    handle /api/* {
+        reverse_proxy backend:8080
+    }
+    # Route everything else to the React frontend
+    handle {
+        reverse_proxy frontend:80
+    }
+}
