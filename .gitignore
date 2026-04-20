@@ -1,0 +1,22 @@
+# Backend
+backend/history.db
+backend/history.db-journal
+backend/antigone-llm-bench
+backend/*.exe
+backend/*.out
+backend/*.app
+
+# Frontend (Node / Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.eslintcache
+frontend/*.local
+
+# OS / Environment
+.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
