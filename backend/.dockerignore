@@ -1,0 +1,10 @@
+*.db
+*.db-journal
+antigone-llm-bench
+antigone-llm-bench-backend
+llm-bench
+*.exe
+*.out
+*.app
+data/
+.git

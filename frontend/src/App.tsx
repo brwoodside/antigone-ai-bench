@@ -157,13 +157,13 @@ function App() {
       navbar={{
         width: 300,
         breakpoint: 'sm',
-        collapsed: { mobile: !opened },
+        collapsed: { mobile: !opened, desktop: !opened },
       }}
       padding="md"
     >
       <AppShell.Header>
         <Group h="100%" px="md">
-          <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+          <Burger opened={opened} onClick={toggle} size="sm" aria-label="Toggle API keys panel" />
           <Title order={3} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <IconCpu /> LLM Bench
           </Title>
