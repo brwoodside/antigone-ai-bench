@@ -2,9 +2,17 @@
 backend/history.db
 backend/history.db-journal
 backend/antigone-llm-bench
+backend/antigone-llm-bench-backend
+backend/antigone-llm-bench.db
+backend/antigone-llm-bench.db-journal
+backend/llm-bench
 backend/*.exe
 backend/*.out
 backend/*.app
+
+# Ad-hoc test scripts (not part of the build)
+test_gemini.go
+test_gemini.py
 
 # Frontend (Node / Vite)
 frontend/node_modules/
