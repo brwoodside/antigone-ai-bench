@@ -10,6 +10,9 @@ Antigone LLM Bench is a full-stack benchmarking and evaluation suite for compari
 - **Persistent History:** Automatically saves all benchmarking runs, speeds, and scores to a local SQLite database for long-term historical comparison.
 - **Secure by Default:** API keys are stored locally in your browser's `localStorage` and passed to the backend securely per-request. They are never saved to the database.
 
+[![Watch the video](https://cdn.loom.com/sessions/thumbnails/7744d333b75a42a79fbcc672f69e5c67-e9e47f9e9a023d61-full-play.gif)](https://www.loom.com/share/7744d333b75a42a79fbcc672f69e5c67)
+[![Watch the video](IMAGE_URL)](LOOM_VIDEO_URL)
+
 ## 🧪 Supported Benchmarks
 
 The custom benchmarking engine connects to the Hugging Face Datasets API to stream evaluation questions dynamically. Supported datasets include:
