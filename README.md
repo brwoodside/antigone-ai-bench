@@ -13,15 +13,6 @@ Antigone LLM Bench is a full-stack benchmarking and evaluation suite for compari
 [![Watch the video](https://cdn.loom.com/sessions/thumbnails/7744d333b75a42a79fbcc672f69e5c67-e9e47f9e9a023d61-full-play.gif)](https://www.loom.com/share/7744d333b75a42a79fbcc672f69e5c67)
 [![Watch the video](https://cdn.loom.com/sessions/thumbnails/0f77fc9251da4c528fa19cd9e81f5d74-29d55bb6ce5d9f5f-full-play.gif)](https://www.loom.com/share/0f77fc9251da4c528fa19cd9e81f5d74)
 
-<div>
-    <a href="https://www.loom.com/share/0f77fc9251da4c528fa19cd9e81f5d74">
-      <p>Cloud Build, Mantine, Go, sqlite Benchmarking and Model Evaluation - Watch Video</p>
-    </a>
-    <a href="https://www.loom.com/share/0f77fc9251da4c528fa19cd9e81f5d74">
-      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/0f77fc9251da4c528fa19cd9e81f5d74-29d55bb6ce5d9f5f-full-play.gif#t=0.1">
-    </a>
-  </div>
-
 ## 🧪 Supported Benchmarks
 
 The custom benchmarking engine connects to the Hugging Face Datasets API to stream evaluation questions dynamically. Supported datasets include:
